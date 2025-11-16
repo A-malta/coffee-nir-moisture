@@ -74,7 +74,7 @@ def generate_all_preprocessed_datasets(
         plot_spectra_and_save(
             X_proc,
             spectral_cols,
-            title=f"Pré-processamento: {name}",
+            title=f"{name}",
             save_path=plot_path
         )
         print(f" Plot salvo em: {plot_path}")
