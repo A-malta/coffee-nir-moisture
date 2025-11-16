@@ -1,0 +1,22 @@
+# Ambiente virtual
+venv/
+.env/
+
+# Saídas e resultados
+output/
+__pycache__/
+
+# Arquivos temporários e de cache
+*.log
+*.tmp
+*.cache
+
+# Arquivos de configuração do sistema e IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+# Dependências e builds
+*.egg-info/
+build/
+dist/
