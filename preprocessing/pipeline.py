@@ -14,11 +14,25 @@ from preprocessing.transforms import (
     area_normalization,
 )
 from preprocessing.utils import get_spectral_columns, build_preprocessed_df
+from config import TARGET_COLUMN
+
+
+def _normalize_target_column(df: pd.DataFrame) -> pd.DataFrame:
+    if TARGET_COLUMN in df.columns:
+        return df
+    for col in df.columns:
+        normalized = col.strip().lower().replace(" ", "_")
+        if normalized.startswith("moisture"):
+            return df.rename(columns={col: TARGET_COLUMN})
+    raise ValueError(
+        f"Coluna alvo '{TARGET_COLUMN}' não encontrada. Colunas disponíveis: {list(df.columns)}"
+    )
 
 
 def load_and_merge(input_spectra: Path, input_moisture: Path) -> pd.DataFrame:
     df_spectra = pd.read_csv(input_spectra)
     df_moist = pd.read_csv(input_moisture)
+    df_moist = _normalize_target_column(df_moist)
     df = df_spectra.merge(df_moist, on="sample")
     return df
 

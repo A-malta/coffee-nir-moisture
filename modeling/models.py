@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 from typing import Dict, Any
 
+import numpy as np
 import pandas as pd
 from joblib import dump
 
@@ -15,15 +16,16 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-
-TARGET_COLUMN = "moisture"
+from config import TARGET_COLUMN
 
 
 def load_dataset(path: Path):
     df = pd.read_csv(path)
     if TARGET_COLUMN not in df.columns:
         raise ValueError(f"Coluna alvo '{TARGET_COLUMN}' não encontrada em {path}")
-    X = df.drop(columns=[TARGET_COLUMN])
+    feature_df = df.drop(columns=[TARGET_COLUMN])
+    numeric_features = feature_df.select_dtypes(include=[np.number])
+    X = numeric_features
     y = df[TARGET_COLUMN]
     return X, y
 
