@@ -6,6 +6,7 @@ def get_spectral_columns(df: pd.DataFrame, start_col_index: int = 1) -> list:
 
 
 def build_preprocessed_df(df_raw: pd.DataFrame, spectral_cols: list, X_processed, suffix: str) -> pd.DataFrame:
+    df_meta = df_raw.drop(columns=spectral_cols)
     df_spec = pd.DataFrame(
         X_processed,
         columns=spectral_cols,
