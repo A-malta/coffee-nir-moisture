@@ -1,53 +1,57 @@
 import numpy as np
 from scipy.signal import savgol_filter
-from numpy.polynomial import Polynomial
 
 
-def apply_savgol_first_derivative(X, window_length=15, polyorder=2, delta=1):
-    return savgol_filter(X, window_length, polyorder, deriv=1, delta=delta, axis=1)
+def apply_savgol_first_derivative(
+    X: np.ndarray,
+    window_length: int,
+    polyorder: int,
+) -> np.ndarray:
+    return savgol_filter(X, window_length=window_length, polyorder=polyorder, deriv=1, axis=1)
 
 
-def apply_savgol_second_derivative(X, window_length=15, polyorder=2, delta=1):
-    return savgol_filter(X, window_length, polyorder, deriv=2, delta=delta, axis=1)
+def apply_savgol_second_derivative(
+    X: np.ndarray,
+    window_length: int,
+    polyorder: int,
+) -> np.ndarray:
+    return savgol_filter(X, window_length=window_length, polyorder=polyorder, deriv=2, axis=1)
 
 
-def baseline_correction_poly(X, degree=2):
-    n_samples, n_vars = X.shape
-    x_axis = np.arange(n_vars)
-    X_corrected = np.zeros_like(X)
-
+def baseline_correction_poly(X: np.ndarray, degree: int) -> np.ndarray:
+    n_samples, n_features = X.shape
+    x_axis = np.arange(n_features)
+    X_corrected = np.empty_like(X)
     for i in range(n_samples):
-        y = X[i, :]
-        coefs = Polynomial.fit(x_axis, y, deg=degree).convert().coef
-        baseline = np.polyval(coefs[::-1], x_axis)
-        X_corrected[i, :] = y - baseline
-
+        coeffs = np.polyfit(x_axis, X[i, :], degree)
+        baseline = np.polyval(coeffs, x_axis)
+        X_corrected[i, :] = X[i, :] - baseline
     return X_corrected
 
 
-def mean_center(X):
-    mean_vec = X.mean(axis=0)
-    return X - mean_vec
+def mean_center(X: np.ndarray) -> np.ndarray:
+    mean = np.mean(X, axis=0, keepdims=True)
+    return X - mean
 
 
-def msc(X):
-    ref = X.mean(axis=0)
-    X_corr = np.zeros_like(X)
-
+def msc(X: np.ndarray) -> np.ndarray:
+    reference = np.mean(X, axis=0)
+    X_corrected = np.empty_like(X)
     for i in range(X.shape[0]):
-        y = X[i, :]
-        a, b = np.polyfit(ref, y, 1)
-        X_corr[i, :] = (y - b) / a
-
-    return X_corr
-
-
-def snv(X):
-    means = X.mean(axis=1, keepdims=True)
-    stds = X.std(axis=1, keepdims=True)
-    return (X - means) / stds
+        fit = np.polyfit(reference, X[i, :], 1, full=False)
+        slope, intercept = fit
+        X_corrected[i, :] = (X[i, :] - intercept) / slope
+    return X_corrected
 
 
-def area_normalization(X):
-    areas = X.sum(axis=1, keepdims=True)
-    return X / areas
+def snv(X: np.ndarray) -> np.ndarray:
+    mean = np.mean(X, axis=1, keepdims=True)
+    std = np.std(X, axis=1, keepdims=True)
+    std = np.where(std == 0, 1.0, std)
+    return (X - mean) / std
+
+
+def area_normalization(X: np.ndarray) -> np.ndarray:
+    area = np.sum(np.abs(X), axis=1, keepdims=True)
+    area = np.where(area == 0, 1.0, area)
+    return X / area
