@@ -143,12 +143,8 @@ def compute_model_metrics(estimator, X_train, y_train, X_test, y_test):
     }
 
 
-def compute_cv_scores(estimator, X_train, y_train, cv):
-    return evaluate_with_cross_validation(estimator, X_train, y_train, cv)
-
-
 def train_and_evaluate(estimator, X_train, y_train, X_test, y_test, cv):
-    cv_scores = compute_cv_scores(estimator, X_train, y_train, cv)
+    cv_scores = evaluate_with_cross_validation(estimator, X_train, y_train, cv)
     trained_model = train_model(estimator, X_train, y_train)
     metrics = compute_model_metrics(trained_model, X_train, y_train, X_test, y_test)
     return {
@@ -209,7 +205,18 @@ def run_param_grid(algo_name, algo_cfg, param_combinations, X_train, y_train, X_
 def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, output_dir, cv):
     algo_cfg = ALGORITHMS[algo_name]
     param_combinations = generate_param_combinations(algo_cfg["get_param_grid"])
-    return run_param_grid(algo_name, algo_cfg, param_combinations, X_train, y_train, X_test, y_test, cv, output_dir)
+    df = run_param_grid(
+        algo_name,
+        algo_cfg,
+        param_combinations,
+        X_train,
+        y_train,
+        X_test,
+        y_test,
+        cv,
+        output_dir,
+    )
+    return df, len(param_combinations)
 
 
 def save_metrics_csv(df, path):
@@ -261,11 +268,10 @@ def train_and_save_all_models_for_algorithm(
     output_dir.mkdir(parents=True, exist_ok=True)
     cv = generate_cv(cv_splits, random_state)
 
-    df = train_models_for_param_grid(
+    df, param_count = train_models_for_param_grid(
         algo_name, X_train, y_train, X_test, y_test, output_dir, cv
     )
 
-    param_count = len(generate_param_combinations(ALGORITHMS[algo_name]["get_param_grid"]))
     ranked = process_results(df, output_dir, algo_name, param_count)
     return ranked
 
