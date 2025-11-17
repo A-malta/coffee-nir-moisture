@@ -14,25 +14,26 @@ from preprocessing.transforms import (
     area_normalization,
 )
 from preprocessing.utils import get_spectral_columns, build_preprocessed_df
-from config import TARGET_COLUMN
 
 
-def _normalize_target_column(df: pd.DataFrame) -> pd.DataFrame:
-    if TARGET_COLUMN in df.columns:
+def _normalize_target_column(df: pd.DataFrame, target_column: str) -> pd.DataFrame:
+    if target_column in df.columns:
         return df
+
+    normalized_target = target_column.strip().lower().replace(" ", "_")
     for col in df.columns:
         normalized = col.strip().lower().replace(" ", "_")
-        if normalized.startswith("moisture"):
-            return df.rename(columns={col: TARGET_COLUMN})
+        if normalized.startswith(normalized_target):
+            return df.rename(columns={col: target_column})
     raise ValueError(
-        f"Coluna alvo '{TARGET_COLUMN}' não encontrada. Colunas disponíveis: {list(df.columns)}"
+        f"Coluna alvo '{target_column}' não encontrada. Colunas disponíveis: {list(df.columns)}"
     )
 
 
-def load_and_merge(input_spectra: Path, input_moisture: Path) -> pd.DataFrame:
+def load_and_merge(input_spectra: Path, input_moisture: Path, target_column: str) -> pd.DataFrame:
     df_spectra = pd.read_csv(input_spectra)
     df_moist = pd.read_csv(input_moisture)
-    df_moist = _normalize_target_column(df_moist)
+    df_moist = _normalize_target_column(df_moist, target_column)
     df = df_spectra.merge(df_moist, on="sample")
     return df
 
@@ -98,9 +99,10 @@ def generate_all_preprocessed_datasets(
     baseline_degree: int,
     start_col_index: int,
     generate_plots: bool,
+    target_column: str,
 ):
     datasets_dir, plots_dir = prepare_output_dirs(output_dir)
-    df = load_and_merge(input_spectra, input_moisture)
+    df = load_and_merge(input_spectra, input_moisture, target_column)
     spectral_cols = get_spectral_columns(df, start_col_index)
     X = df[spectral_cols].values
     outputs = apply_all_transforms(X, window_length, polyorder, baseline_degree)
@@ -112,6 +114,7 @@ if __name__ == "__main__":
     input_spectra = project_root / "data" / "raw" / "dados_brutos.csv"
     input_moisture = project_root / "data" / "raw" / "moisture.csv"
     output_dir = project_root / "output" / "preprocessed"
+    target_column = "moisture"
 
     generate_all_preprocessed_datasets(
         input_spectra=input_spectra,
@@ -122,5 +125,6 @@ if __name__ == "__main__":
         baseline_degree=2,
         start_col_index=2,
         generate_plots=True,
+        target_column=target_column,
     )
 

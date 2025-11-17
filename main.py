@@ -4,7 +4,7 @@ from preprocessing.pipeline import generate_all_preprocessed_datasets
 from modeling.train_all_models import main as run_modeling_pipeline
 
 
-def run_preprocessing(project_root: Path) -> None:
+def run_preprocessing(project_root: Path, target_column: str = "moisture") -> None:
     input_spectra = project_root / "data" / "raw" / "dados_brutos.csv"
     input_moisture = project_root / "data" / "raw" / "moisture.csv"
     output_dir = project_root / "output" / "preprocessed"
@@ -17,6 +17,7 @@ def run_preprocessing(project_root: Path) -> None:
         baseline_degree=2,
         start_col_index=2,
         generate_plots=True,
+        target_column=target_column,
     )
 
 
