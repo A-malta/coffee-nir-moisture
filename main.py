@@ -23,8 +23,9 @@ def run_preprocessing(project_root: Path, target_column: str = "moisture") -> No
 
 def main() -> None:
     project_root = Path(__file__).resolve().parent
-    run_preprocessing(project_root)
-    run_modeling_pipeline()
+    target_column = "moisture"
+    run_preprocessing(project_root, target_column=target_column)
+    run_modeling_pipeline(target_column=target_column)
 
 
 if __name__ == "__main__":
