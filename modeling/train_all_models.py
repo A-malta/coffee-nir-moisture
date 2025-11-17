@@ -31,9 +31,9 @@ def split_train_val_kennard_stone(X, y, val_ratio=0.2):
     )
 
 
-def load_and_prepare_dataset(csv_path, val_ratio=0.2):
+def load_and_prepare_dataset(csv_path, target_column, val_ratio=0.2):
     dataset_name = extract_dataset_name(csv_path)
-    X, y = load_dataset(csv_path)
+    X, y = load_dataset(csv_path, target_column)
     X_train, X_val, y_train, y_val = split_train_val_kennard_stone(X, y, val_ratio)
     return dataset_name, X_train, X_val, y_train, y_val
 
@@ -64,14 +64,16 @@ def train_all_algorithms_for_dataset(
         )
 
 
-def main(val_ratio=0.2, cv_splits=5, random_state=42):
+def main(val_ratio=0.2, cv_splits=5, random_state=42, target_column="moisture"):
     csv_paths = get_preprocessed_csv_paths()
     if not csv_paths:
         return
 
     for csv_path in csv_paths:
         dataset_name, X_train, X_val, y_train, y_val = load_and_prepare_dataset(
-            csv_path, val_ratio
+            csv_path,
+            target_column,
+            val_ratio,
         )
         train_all_algorithms_for_dataset(
             dataset_name,
