@@ -58,18 +58,33 @@ def apply_all_transforms(X: np.ndarray, window_length: int, polyorder: int, base
     }
 
 
+def _build_axis(cols, n_features):
+    numerical_axis: list[float] = []
+    for c in cols:
+        try:
+            numerical_axis.append(float(c))
+        except (TypeError, ValueError):
+            return np.arange(n_features), "Índice das features"
+    if numerical_axis:
+        start_label, end_label = cols[0], cols[-1]
+        axis_label = (
+            f"Características espectrais ({start_label} – {end_label})"
+            if start_label != end_label
+            else f"Característica espectral {start_label}"
+        )
+        return np.asarray(numerical_axis), axis_label
+    return np.arange(n_features), "Características espectrais"
+
+
 def plot_spectra(X, cols, title, save_path):
-    try:
-        wl = np.array([float(c) for c in cols])
-    except Exception:
-        wl = np.arange(X.shape[1])
+    wl, axis_label = _build_axis(cols, X.shape[1])
     plt.figure(figsize=(8, 5))
     for i in range(X.shape[0]):
         plt.plot(wl, X[i], alpha=0.3)
     save_path.parent.mkdir(parents=True, exist_ok=True)
     plt.title(title)
-    plt.xlabel("x")
-    plt.ylabel("y")
+    plt.xlabel(axis_label)
+    plt.ylabel("Intensidade pré-processada")
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     plt.close()
@@ -104,6 +119,12 @@ def generate_all_preprocessed_datasets(
     datasets_dir, plots_dir = prepare_output_dirs(output_dir)
     df = load_and_merge(input_spectra, input_moisture, target_column)
     spectral_cols = get_spectral_columns(df, start_col_index)
+    spectral_cols = [col for col in spectral_cols if col != target_column]
+    if not spectral_cols:
+        raise ValueError(
+            "Nenhuma coluna espectral foi encontrada após remover a coluna alvo. "
+            "Verifique o parâmetro 'start_col_index' e o nome da coluna alvo."
+        )
     X = df[spectral_cols].values
     outputs = apply_all_transforms(X, window_length, polyorder, baseline_degree)
     save_outputs(outputs, df, spectral_cols, datasets_dir, plots_dir, generate_plots)
