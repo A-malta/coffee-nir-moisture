@@ -3,7 +3,6 @@ venv/
 .env/
 
 # Saídas e resultados
-output/
 __pycache__/
 
 # Arquivos temporários e de cache

@@ -1,0 +1,9 @@
+algo,model_id,model_path,cv_mean_neg_mse,cv_std_neg_mse,train_rmse,test_rmse,train_r2,test_r2,param_n_components,param_scale,rank_by_test_rmse
+pls,6,/home/aline/Documentos/coffee-nir-moisture/output/models/pls/area_normalization/pls_model_006.joblib,-1.9116316635840231e-22,1.4846494157970736e-22,4.1692085665305475e-12,5.931405015616687e-12,1.0,1.0,12,False,1
+pls,4,/home/aline/Documentos/coffee-nir-moisture/output/models/pls/area_normalization/pls_model_004.joblib,-3.946907653826206e-21,1.5589313722201662e-21,4.7824153115145366e-11,4.4229434121171596e-11,1.0,1.0,8,False,2
+pls,2,/home/aline/Documentos/coffee-nir-moisture/output/models/pls/area_normalization/pls_model_002.joblib,-9.501236917733477e-19,4.570508536627777e-19,8.976497462552454e-10,7.8084613123378e-10,1.0,1.0,4,False,3
+pls,0,/home/aline/Documentos/coffee-nir-moisture/output/models/pls/area_normalization/pls_model_000.joblib,-2.1651848200721832e-13,5.100124703179596e-14,4.4691898735805916e-07,5.011599307623229e-07,0.9999999999999993,0.999999999999999,2,False,4
+pls,7,/home/aline/Documentos/coffee-nir-moisture/output/models/pls/area_normalization/pls_model_007.joblib,-0.37359742664459733,0.3317038663431496,0.23358144599976935,0.3251801616591346,0.9998288382678919,0.999584518212181,12,True,5
+pls,5,/home/aline/Documentos/coffee-nir-moisture/output/models/pls/area_normalization/pls_model_005.joblib,-1.480679057014339,0.4564466059247645,0.905298062679374,1.2331478083889666,0.9974289343301708,0.9940250513489349,8,True,6
+pls,3,/home/aline/Documentos/coffee-nir-moisture/output/models/pls/area_normalization/pls_model_003.joblib,-4.0015454387938805,0.6155418776534883,1.7181596216890744,1.4433441958989643,0.9907390187587614,0.9918145280097389,4,True,7
+pls,1,/home/aline/Documentos/coffee-nir-moisture/output/models/pls/area_normalization/pls_model_001.joblib,-40.15477504735873,26.74101656200084,5.96209229526873,6.073392412647124,0.8884865179441557,0.8550672303526097,2,True,8
