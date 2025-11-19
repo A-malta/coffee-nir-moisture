@@ -27,3 +27,39 @@ coffee-nir-moisture/
 ├── requirements.txt      # Dependências Python
 └── .gitignore
 
+
+---
+
+---
+
+## Pré-processamento de Espectros
+
+Abaixo estão os gráficos gerados para cada técnica de pré-processamento aplicada aos espectros NIR:
+
+```text
+Diretório: coffee-nir-moisture/output/preprocessed/plots
+```
+
+**Área Normalizada**  
+![](output/preprocessed/plots/area_normalization.png)
+
+**Correção de Linha de Base**  
+![](output/preprocessed/plots/baseline_correction.png)
+
+**Espectros Brutos**  
+![](output/preprocessed/plots/bruto.png)
+
+**Centralização pela Média**  
+![](output/preprocessed/plots/mean_centering.png)
+
+**Multiplicative Scatter Correction (MSC)**  
+![](output/preprocessed/plots/msc.png)
+
+**Derivada 1ª ordem (Savitzky-Golay)**  
+![](output/preprocessed/plots/savitzkygolay_1a_derivada.png)
+
+**Derivada 2ª ordem (Savitzky-Golay)**  
+![](output/preprocessed/plots/savitzkygolay_2a_derivada.png)
+
+**Standard Normal Variate (SNV)**  
+![](output/preprocessed/plots/snv.png)
