@@ -1,5 +1,4 @@
 from pathlib import Path
-import json
 import pandas as pd
 from joblib import dump
 import numpy as np
@@ -222,12 +221,6 @@ def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, out
 def save_metrics_csv(df, path):
     df.to_csv(path, index=False)
 
-
-def save_summary(summary_dict, path):
-    with open(path, "w") as f:
-        json.dump(summary_dict, f, indent=4)
-
-
 def rank_results_by_rmse(df):
     if df.empty:
         return df
@@ -235,20 +228,9 @@ def rank_results_by_rmse(df):
     df["rank_by_test_rmse"] = range(1, len(df) + 1)
     return df
 
-
-def build_summary(df, algo_name, param_count):
-    return {
-        "algorithm": algo_name,
-        "n_models": param_count,
-        "best_by_test_rmse": df.iloc[0].to_dict() if not df.empty else None,
-    }
-
-
-def process_results(df, output_dir, algo_name, param_count):
+def process_results(df, output_dir, algo_name):
     ranked = rank_results_by_rmse(df)
     save_metrics_csv(ranked, output_dir / "all_models_metrics.csv")
-    summary = build_summary(ranked, algo_name, param_count)
-    save_summary(summary, output_dir / "summary.json")
     return ranked
 
 
@@ -272,7 +254,7 @@ def train_and_save_all_models_for_algorithm(
         algo_name, X_train, y_train, X_test, y_test, output_dir, cv
     )
 
-    ranked = process_results(df, output_dir, algo_name, param_count)
+    ranked = process_results(df, output_dir, algo_name)
     return ranked
 
 
