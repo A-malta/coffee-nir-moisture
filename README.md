@@ -2,8 +2,6 @@
 
 Pipeline em Python para **pré-processamento de espectros NIR** de amostras de café, com plano de expansão para **treinamento de modelos de regressão** para previsão de teor de umidade.
 
----
-
 ## Objetivos do projeto
 
 1. Organizar em um único fluxo o tratamento de espectros NIR de café.
@@ -14,23 +12,25 @@ Pipeline em Python para **pré-processamento de espectros NIR** de amostras de c
    - Support Vector Regression (SVR)
    - Perceptron Multicamadas (MLP)
 
----
-
 ## Estrutura do repositório
 
 ```text
 coffee-nir-moisture/
 ├── data/
-│   └── raw/              # Dados brutos (espectros, referências de umidade, etc.)
-├── preprocessing/        # Funções de pré-processamento espectral
-├── pipeline.py           # Pipeline ATUAL: pré-processamento dos dados
-├── requirements.txt      # Dependências Python
+│   └── raw/                       # Dados brutos (espectros, referências de umidade, etc.)
+├── preprocessing/                 # Módulos com loaders, transforms e utilitários do pipeline
+│   ├── pipeline.py                # Orquestrador do fluxo de pré-processamento
+│   └── loaders|transforms|utils   # Componentes reutilizáveis do pipeline
+├── main.py                        # Script principal para executar o pipeline
+├── modeling/                      # Espaço reservado para futuros modelos de regressão
+├── output/
+│   ├── preprocessed/
+│   │   ├── datasets/              # Espectros transformados/exportados
+│   │   └── plots/                 # Visualizações das etapas de pré-processamento
+│   └── models/                    # Diretório para salvar checkpoints de PLS, RF, SVR, MLP, etc.
+├── requirements.txt               # Dependências Python
 └── .gitignore
 
-
----
-
----
 
 ## Pré-processamento de Espectros
 
