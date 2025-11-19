@@ -29,8 +29,8 @@ coffee-nir-moisture/
 │   │   └── plots/                 # Visualizações das etapas de pré-processamento
 │   └── models/                    # Diretório para salvar checkpoints de PLS, RF, SVR, MLP, etc.
 ├── requirements.txt               # Dependências Python
-└── .gitignore
-
+└── .gitignore 
+```
 
 ## Pré-processamento de Espectros
 
