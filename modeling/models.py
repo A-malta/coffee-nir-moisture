@@ -53,6 +53,8 @@ def get_param_grid_mlp():
         "activation": ["relu", "tanh"],
         "alpha": [1e-4, 1e-3],
         "learning_rate_init": [1e-3, 1e-2],
+        "max_iter": [5000, 10000],
+        "tol": [1e-4, 1e-3],
     }
 
 
@@ -85,16 +87,19 @@ def make_svr(params):
 
 
 def make_mlp(params):
+    mlp_params = {
+        **params,
+        "early_stopping": True,
+        "n_iter_no_change": 30,
+        "random_state": 42,
+    }
+    
+    mlp_params.setdefault("max_iter", 5000)
+    mlp_params.setdefault("tol", 1e-4)
+
     return Pipeline([
         ("scaler", StandardScaler()),
-        ("model", MLPRegressor(
-            hidden_layer_sizes=params["hidden_layer_sizes"],
-            activation=params["activation"],
-            alpha=params["alpha"],
-            learning_rate_init=params["learning_rate_init"],
-            max_iter=2000,
-            random_state=42,
-        ))
+        ("model", MLPRegressor(**mlp_params))
     ])
 
 
