@@ -2,6 +2,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 
 from preprocessing.loaders import save_dataset
 from preprocessing.transforms import (
@@ -58,21 +59,35 @@ def apply_all_transforms(X: np.ndarray, window_length: int, polyorder: int, base
     }
 
 
-def plot_spectra(X, cols, title, save_path):
+def plot_spectra(X, cols, target_values, target_label, title, save_path):
     try:
         wl = np.array([float(c) for c in cols])
     except Exception:
         wl = np.arange(X.shape[1])
-    plt.figure(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    target_values = np.asarray(target_values)
+    cmap = LinearSegmentedColormap.from_list(
+        "yellow_to_darkblue", ["#ffd700", "#00008b"]
+    )
+    norm = plt.Normalize(vmin=target_values.min(), vmax=target_values.max())
+
     for i in range(X.shape[0]):
-        plt.plot(wl, X[i], alpha=0.3)
+        color = cmap(norm(target_values[i]))
+        ax.plot(wl, X[i], alpha=0.35, color=color)
+
+    sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax, pad=0.02)
+    cbar.set_label(target_label)
+
     save_path.parent.mkdir(parents=True, exist_ok=True)
-    plt.title(title)
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.tight_layout()
-    plt.savefig(save_path, dpi=150)
-    plt.close()
+    ax.set_title(title)
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=150)
+    plt.close(fig)
 
 
 def save_outputs(
@@ -81,13 +96,22 @@ def save_outputs(
     spectral_cols: list[str],
     datasets_dir: Path,
     plots_dir: Path,
-    generate_plots: bool
+    generate_plots: bool,
+    target_column: str,
 ) -> None:
+    target_values = df_raw[target_column].values
     for name, Xp in outputs.items():
         df_out = build_preprocessed_df(df_raw, spectral_cols, Xp)
         save_dataset(df_out, datasets_dir / f"dados_{name}.csv")
         if generate_plots:
-            plot_spectra(Xp, spectral_cols, name, plots_dir / f"{name}.png")
+            plot_spectra(
+                Xp,
+                spectral_cols,
+                target_values,
+                target_column,
+                name,
+                plots_dir / f"{name}.png",
+            )
 
 
 def generate_all_preprocessed_datasets(
@@ -106,7 +130,15 @@ def generate_all_preprocessed_datasets(
     spectral_cols = get_spectral_columns(df, start_col_index)
     X = df[spectral_cols].values
     outputs = apply_all_transforms(X, window_length, polyorder, baseline_degree)
-    save_outputs(outputs, df, spectral_cols, datasets_dir, plots_dir, generate_plots)
+    save_outputs(
+        outputs,
+        df,
+        spectral_cols,
+        datasets_dir,
+        plots_dir,
+        generate_plots,
+        target_column,
+    )
 
 
 if __name__ == "__main__":
