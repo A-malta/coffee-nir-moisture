@@ -4,7 +4,7 @@ from joblib import dump
 import numpy as np
 
 from sklearn.model_selection import KFold, ParameterGrid, cross_val_score
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.ensemble import RandomForestRegressor
@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 def load_dataset(path, target_column):
     df = pd.read_csv(path)
     if target_column not in df.columns:
-        raise ValueError(f"Coluna alvo '{target_column}' não encontrada em {path}")
+        raise ValueError(f"Target column '{target_column}' not found in {path}")
     X = df.select_dtypes(include=[np.number]).drop(columns=[target_column], errors='ignore')
     y = df[target_column]
     return X, y
@@ -93,7 +93,6 @@ def make_mlp(params):
         "n_iter_no_change": 30,
         "random_state": 42,
     }
-    
     mlp_params.setdefault("max_iter", 5000)
     mlp_params.setdefault("tol", 1e-4)
 
@@ -123,11 +122,6 @@ ALGORITHMS = {
 }
 
 
-def train_model(estimator, X_train, y_train):
-    estimator.fit(X_train, y_train)
-    return estimator
-
-
 def evaluate_with_cross_validation(estimator, X, y, cv):
     scores = cross_val_score(estimator, X, y, cv=cv, scoring="neg_mean_squared_error", n_jobs=-1)
     return {
@@ -139,9 +133,19 @@ def evaluate_with_cross_validation(estimator, X, y, cv):
 def compute_model_metrics(estimator, X_train, y_train, X_test, y_test):
     y_train_pred = estimator.predict(X_train)
     y_test_pred = estimator.predict(X_test)
+    
+    train_rmse = float(mean_squared_error(y_train, y_train_pred, squared=False))
+    test_rmse = float(mean_squared_error(y_test, y_test_pred, squared=False))
+    
     return {
-        "train_rmse": float(mean_squared_error(y_train, y_train_pred, squared=False)),
-        "test_rmse": float(mean_squared_error(y_test, y_test_pred, squared=False)),
+        "train_rmse": train_rmse,
+        "test_rmse": test_rmse,
+        "train_mae": float(mean_absolute_error(y_train, y_train_pred)),
+        "test_mae": float(mean_absolute_error(y_test, y_test_pred)),
+        "train_bias": float(np.mean(y_train_pred - y_train)),
+        "test_bias": float(np.mean(y_test_pred - y_test)),
+        "train_rpd": float(np.std(y_train) / train_rmse) if train_rmse > 0 else 0.0,
+        "test_rpd": float(np.std(y_test) / test_rmse) if test_rmse > 0 else 0.0,
         "train_r2": float(r2_score(y_train, y_train_pred)),
         "test_r2": float(r2_score(y_test, y_test_pred)),
     }
@@ -149,10 +153,10 @@ def compute_model_metrics(estimator, X_train, y_train, X_test, y_test):
 
 def train_and_evaluate(estimator, X_train, y_train, X_test, y_test, cv):
     cv_scores = evaluate_with_cross_validation(estimator, X_train, y_train, cv)
-    trained_model = train_model(estimator, X_train, y_train)
-    metrics = compute_model_metrics(trained_model, X_train, y_train, X_test, y_test)
+    estimator.fit(X_train, y_train)
+    metrics = compute_model_metrics(estimator, X_train, y_train, X_test, y_test)
     return {
-        "estimator": trained_model,
+        "estimator": estimator,
         **cv_scores,
         **metrics
     }
@@ -164,10 +168,6 @@ def generate_param_combinations(grid_func):
 
 def generate_cv(n_splits, random_state):
     return KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
-
-
-def save_model(model, path):
-    dump(model, path)
 
 
 def build_result_row(algo_name, model_id, model_path, params, results):
@@ -191,7 +191,7 @@ def train_evaluate_and_save_single(algo_name, params, algo_cfg, idx, X_train, y_
     results = train_and_evaluate(estimator, X_train, y_train, X_test, y_test, cv)
 
     model_path = output_dir / f"{algo_name}_model_{idx:03d}.joblib"
-    save_model(results["estimator"], model_path)
+    dump(results["estimator"], model_path)
 
     return build_result_row(algo_name, idx, model_path, params, results)
 
@@ -223,20 +223,13 @@ def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, out
     return df, len(param_combinations)
 
 
-def save_metrics_csv(df, path):
-    df.to_csv(path, index=False)
-
-def rank_results_by_rmse(df):
+def process_results(df, output_dir, algo_name):
     if df.empty:
         return df
     df = df.sort_values(by="test_rmse")
     df["rank_by_test_rmse"] = range(1, len(df) + 1)
+    df.to_csv(output_dir / "all_models_metrics.csv", index=False)
     return df
-
-def process_results(df, output_dir, algo_name):
-    ranked = rank_results_by_rmse(df)
-    save_metrics_csv(ranked, output_dir / "all_models_metrics.csv")
-    return ranked
 
 
 def train_and_save_all_models_for_algorithm(
@@ -250,7 +243,7 @@ def train_and_save_all_models_for_algorithm(
     random_state=42,
 ):
     if algo_name not in ALGORITHMS:
-        raise ValueError(f"Algoritmo '{algo_name}' não definido")
+        raise ValueError(f"Algorithm '{algo_name}' not defined")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     cv = generate_cv(cv_splits, random_state)
@@ -265,7 +258,6 @@ def train_and_save_all_models_for_algorithm(
 
 def main():
     target_column = "moisture"
-
     train_path = "train.csv"
     test_path = "test.csv"
 
@@ -286,7 +278,7 @@ def main():
         random_state=42,
     )
 
-    print("Treinamento finalizado.")
+    print("Training finished.")
     print(ranked_results.head())
 
 
