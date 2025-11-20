@@ -7,6 +7,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from preprocessing.loaders import save_dataset
 from preprocessing.transforms import (
@@ -98,17 +99,19 @@ def _plot_spectra(X_proc: np.ndarray, wavelengths: np.ndarray, y: np.ndarray, ti
             vmin, vmax = 0.0, 1.0
     denom = vmax - vmin if vmax != vmin else 1.0
 
+    wavelengths_nm = 10**7 / wavelengths
+
     fig, ax = plt.subplots(figsize=(10, 6))
     for i in range(X_proc.shape[0]):
         value = 0.5 if not np.isfinite(y[i]) else (y[i] - vmin) / denom
         ax.plot(
-            wavelengths,
+            wavelengths_nm,
             X_proc[i, :],
-            color=plt.cm.coolwarm(np.clip(value, 0, 1)),
+            color=plt.cm.coolwarm_r(np.clip(value, 0, 1)),
             alpha=0.8,
         )
 
-    sm = plt.cm.ScalarMappable(cmap="coolwarm", norm=plt.Normalize(vmin=vmin, vmax=vmax))
+    sm = plt.cm.ScalarMappable(cmap="coolwarm_r", norm=plt.Normalize(vmin=vmin, vmax=vmax))
     sm.set_array([])
     cbar = fig.colorbar(sm, ax=ax, pad=0.02)
     cbar.set_label("Umidade (%)")
@@ -162,7 +165,7 @@ def save_outputs(
 ) -> None:
     spectral_cols_list = list(spectral_cols)
     wavelengths = _coerce_wavelengths(pd.Index(spectral_cols_list))
-    for name, Xp in outputs.items():
+    for name, Xp in tqdm(outputs.items(), desc="Saving Datasets & Plots"):
         df_out = build_preprocessed_df(df_raw, spectral_cols_list, Xp)
         slug = _slugify(name)
         save_dataset(df_out, datasets_dir / f"dados_{slug}.csv")

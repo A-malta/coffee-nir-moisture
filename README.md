@@ -83,18 +83,15 @@ Após o pré-processamento, o pipeline de modelagem entra em ação. Ele itera s
         - `tol`: [1e-4, 1e-3] (Tolerância para otimização).
 
 4.  **Validação Cruzada (Cross-Validation)**:
-    - Durante o Grid Search, cada combinação de parâmetros é avaliada usando **5-fold Cross-Validation** no conjunto de treino. Isso evita o overfitting (ajuste excessivo) aos dados de treino.
+    - Durante o Grid Search, **todas** as combinações de parâmetros são avaliadas usando **5-fold Cross-Validation** no conjunto de treino.
 
 5.  **Avaliação Final e Salvamento**:
-    - O melhor modelo encontrado é retreinado com todos os dados de treino.
-    - Ele é então testado no conjunto de **Validação** (que nunca "viu" durante o treino).
-    - As métricas de performance são calculadas:
-        - **RMSE** (Erro médio quadrático): Quanto menor, melhor.
-        - **MAE** (Erro absoluto médio): Média dos erros absolutos.
-        - **R²** (Coeficiente de determinação): Quanto mais próximo de 1, melhor.
-        - **RPD**: Relação entre desvio padrão e erro. RPD > 2.5 indica bons modelos para quantificação.
-    - O modelo final é salvo em formato `.joblib` na pasta `output/models/`.
-    - Um arquivo CSV com o ranking de todos os modelos testados é gerado.
+    - Para **cada** combinação de parâmetros testada no Grid Search (não apenas a melhor):
+        1. O modelo é retreinado com todos os dados de treino.
+        2. Ele é testado no conjunto de **Validação** (que nunca "viu" durante o treino).
+        3. As métricas de performance são calculadas (RMSE, MAE, R², RPD).
+        4. O modelo é salvo em formato `.joblib`.
+    - Ao final, um arquivo CSV com o ranking de **todos** os modelos testados é gerado, permitindo comparar não só os algoritmos, mas também o impacto de cada hiperparâmetro.
 
 
 ```text

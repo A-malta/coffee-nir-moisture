@@ -5,6 +5,7 @@ from modeling.models import (
     train_and_save_all_models_for_algorithm,
 )
 from preprocessing.kennard_stone import kennard_stone
+from tqdm import tqdm
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PREPROCESSED_DATASETS_DIR = PROJECT_ROOT / "output" / "preprocessed" / "datasets"
@@ -50,7 +51,9 @@ def train_all_algorithms_for_dataset(
 ):
     algo_names = algo_names or ALGORITHMS.keys()
 
-    for algo_name in algo_names:
+    algo_names = algo_names or ALGORITHMS.keys()
+
+    for algo_name in tqdm(algo_names, desc=f"Training on {dataset_name}", leave=False):
         output_dir = MODELS_ROOT_DIR / algo_name / dataset_name
         train_and_save_all_models_for_algorithm(
             algo_name=algo_name,
@@ -69,7 +72,7 @@ def main(val_ratio=0.2, cv_splits=5, random_state=42, target_column="moisture"):
     if not csv_paths:
         return
 
-    for csv_path in csv_paths:
+    for csv_path in tqdm(csv_paths, desc="Datasets"):
         dataset_name, X_train, X_val, y_train, y_val = load_and_prepare_dataset(
             csv_path,
             target_column,

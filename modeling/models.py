@@ -2,6 +2,7 @@ from pathlib import Path
 import pandas as pd
 from joblib import dump
 import numpy as np
+from tqdm import tqdm
 
 from sklearn.model_selection import KFold, ParameterGrid, cross_val_score
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
@@ -198,7 +199,7 @@ def train_evaluate_and_save_single(algo_name, params, algo_cfg, idx, X_train, y_
 
 def run_param_grid(algo_name, algo_cfg, param_combinations, X_train, y_train, X_test, y_test, cv, output_dir):
     rows = []
-    for idx, params in enumerate(param_combinations):
+    for idx, params in enumerate(tqdm(param_combinations, desc=f"Grid Search {algo_name}", leave=False)):
         row = train_evaluate_and_save_single(
             algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, cv, output_dir
         )
