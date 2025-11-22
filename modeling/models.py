@@ -36,7 +36,6 @@ def get_param_grid_rf():
         "max_depth": [None, 10, 20],
         "min_samples_split": [2, 5],
         "min_samples_leaf": [1, 2],
-        "max_features": ["sqrt", "log2"],
         "bootstrap": [True, False],
     }
 
@@ -72,7 +71,6 @@ def make_rf(params):
         max_depth=params["max_depth"],
         min_samples_split=params["min_samples_split"],
         min_samples_leaf=params["min_samples_leaf"],
-        max_features=params["max_features"],
         bootstrap=params["bootstrap"],
     )
 
