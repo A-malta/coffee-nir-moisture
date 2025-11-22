@@ -38,13 +38,9 @@ def load_all_metrics():
     return pd.concat(data, ignore_index=True)
 
 def filter_best_models(df):
-    """
-    Selects the best model (lowest test_rmse) for each algorithm and preprocessing combination.
-    """
     if df.empty:
         return df
         
-    # Group by algorithm and preprocessing, then find the index of the row with min test_rmse
     idx = df.groupby(["algorithm", "preprocessing"])["test_rmse"].idxmin()
     return df.loc[idx].reset_index(drop=True)
 
@@ -62,9 +58,6 @@ def get_metrics(df):
     return metrics
 
 def generate_heatmap(df, metric):
-    """
-    Generates a heatmap for a specific metric, comparing Algorithms vs Preprocessing.
-    """
     pivot_df = df.pivot_table(
         index="algorithm", 
         columns="preprocessing", 
@@ -75,14 +68,11 @@ def generate_heatmap(df, metric):
     if pivot_df.empty:
         return
 
-    # Sort index to keep consistent order if desired, or rely on ALGORITHMS order
-    # Reindex to ensure specific order of algorithms if they exist in the data
     existing_algos = [algo for algo in ALGORITHMS if algo in pivot_df.index]
     pivot_df = pivot_df.reindex(existing_algos)
 
     plt.figure(figsize=(14, 6))
     
-    # Determine formatting based on metric name
     fmt = ".4f"
     
     sns.heatmap(pivot_df, annot=True, fmt=fmt, cmap="viridis_r", cbar_kws={'label': metric})
@@ -95,7 +85,7 @@ def generate_heatmap(df, metric):
     plt.savefig(OUTPUT_DIR / f"{metric}.png", dpi=150)
     plt.close()
 
-def main():
+def generate_all_heatmaps():
     print("Loading metrics...")
     df = load_all_metrics()
     
@@ -118,4 +108,4 @@ def main():
     print(f"Heatmaps saved to {OUTPUT_DIR}")
 
 if __name__ == "__main__":
-    main()
+    generate_all_heatmaps()

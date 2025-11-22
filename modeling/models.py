@@ -123,9 +123,6 @@ ALGORITHMS = {
 }
 
 
-
-
-
 def compute_model_metrics(estimator, X_train, y_train, X_test, y_test, X_val, y_val):
     y_train_pred = estimator.predict(X_train)
     y_test_pred = estimator.predict(X_test)
@@ -159,9 +156,6 @@ def train_and_evaluate(estimator, X_train, y_train, X_test, y_test, X_val, y_val
 
 def generate_param_combinations(grid_func):
     return list(ParameterGrid(grid_func()))
-
-
-
 
 
 def build_result_row(algo_name, model_id, model_path, params, results):
@@ -264,10 +258,10 @@ def main():
         algo_name=algo_name,
         X_train=X_train,
         X_test=X_test,
-        X_val=X_test, # Just dummy for main
+        X_val=X_test,
         y_train=y_train,
         y_test=y_test,
-        y_val=y_test, # Just dummy for main
+        y_val=y_test,
         output_dir=output_dir,
     )
 

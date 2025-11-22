@@ -6,6 +6,8 @@ from modeling.models import (
 )
 from preprocessing.kennard_stone import kennard_stone
 from tqdm import tqdm
+from analysis.aggregator import aggregate_and_rank_models
+from analysis.generate_heatmaps import generate_all_heatmaps
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PREPROCESSED_DATASETS_DIR = PROJECT_ROOT / "output" / "preprocessed" / "datasets"
@@ -106,8 +108,13 @@ def main(val_ratio=0.1, test_ratio=0.1, random_state=42, target_column="moisture
             y_val,
             random_state=random_state,
         )
+    
+    print("\nAggregating results and generating rankings...")
+    aggregate_and_rank_models(MODELS_ROOT_DIR, PROJECT_ROOT / "output")
+
+    print("\nGenerating analysis heatmaps...")
+    generate_all_heatmaps()
 
 
 if __name__ == "__main__":
     main()
-
