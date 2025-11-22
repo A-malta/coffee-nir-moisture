@@ -72,7 +72,6 @@ def train_all_algorithms_for_dataset(
     y_test,
     y_val,
     algo_names=None,
-    cv_splits=5,
     random_state=42,
 ):
     algo_names = algo_names or ALGORITHMS.keys()
@@ -88,12 +87,10 @@ def train_all_algorithms_for_dataset(
             y_test=y_test,
             y_val=y_val,
             output_dir=output_dir,
-            cv_splits=cv_splits,
-            random_state=random_state,
         )
 
 
-def main(val_ratio=0.1, test_ratio=0.1, cv_splits=5, random_state=42, target_column="moisture"):
+def main(val_ratio=0.1, test_ratio=0.1, random_state=42, target_column="moisture"):
     csv_paths = get_preprocessed_csv_paths()
     if not csv_paths:
         return
@@ -113,7 +110,6 @@ def main(val_ratio=0.1, test_ratio=0.1, cv_splits=5, random_state=42, target_col
             y_train,
             y_test,
             y_val,
-            cv_splits=None, # Disable CV
             random_state=random_state,
         )
 

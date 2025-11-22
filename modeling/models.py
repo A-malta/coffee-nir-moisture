@@ -4,7 +4,7 @@ from joblib import dump
 import numpy as np
 from tqdm import tqdm
 
-from sklearn.model_selection import KFold, ParameterGrid, cross_val_score
+from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 from sklearn.cross_decomposition import PLSRegression
@@ -123,12 +123,7 @@ ALGORITHMS = {
 }
 
 
-def evaluate_with_cross_validation(estimator, X, y, cv):
-    scores = cross_val_score(estimator, X, y, cv=cv, scoring="neg_mean_squared_error", n_jobs=-1)
-    return {
-        "cv_mean_neg_mse": float(scores.mean()),
-        "cv_std_neg_mse": float(scores.std())
-    }
+
 
 
 def compute_model_metrics(estimator, X_train, y_train, X_test, y_test, X_val, y_val):
@@ -159,17 +154,11 @@ def compute_model_metrics(estimator, X_train, y_train, X_test, y_test, X_val, y_
     }
 
 
-def train_and_evaluate(estimator, X_train, y_train, X_test, y_test, X_val, y_val, cv):
-    if cv is not None:
-        cv_scores = evaluate_with_cross_validation(estimator, X_train, y_train, cv)
-    else:
-        cv_scores = {}
-        
+def train_and_evaluate(estimator, X_train, y_train, X_test, y_test, X_val, y_val):
     estimator.fit(X_train, y_train)
     metrics = compute_model_metrics(estimator, X_train, y_train, X_test, y_test, X_val, y_val)
     return {
         "estimator": estimator,
-        **cv_scores,
         **metrics
     }
 
@@ -178,8 +167,7 @@ def generate_param_combinations(grid_func):
     return list(ParameterGrid(grid_func()))
 
 
-def generate_cv(n_splits, random_state):
-    return KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+
 
 
 def build_result_row(algo_name, model_id, model_path, params, results):
@@ -198,9 +186,9 @@ def create_estimator_for_params(algo_cfg, params):
     return algo_cfg["make_estimator"](params)
 
 
-def train_evaluate_and_save_single(algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, X_val, y_val, cv, output_dir):
+def train_evaluate_and_save_single(algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, X_val, y_val, output_dir):
     estimator = create_estimator_for_params(algo_cfg, params)
-    results = train_and_evaluate(estimator, X_train, y_train, X_test, y_test, X_val, y_val, cv)
+    results = train_and_evaluate(estimator, X_train, y_train, X_test, y_test, X_val, y_val)
 
     model_path = output_dir / f"{algo_name}_model_{idx:03d}.joblib"
     dump(results["estimator"], model_path)
@@ -208,17 +196,17 @@ def train_evaluate_and_save_single(algo_name, params, algo_cfg, idx, X_train, y_
     return build_result_row(algo_name, idx, model_path, params, results)
 
 
-def run_param_grid(algo_name, algo_cfg, param_combinations, X_train, y_train, X_test, y_test, X_val, y_val, cv, output_dir):
+def run_param_grid(algo_name, algo_cfg, param_combinations, X_train, y_train, X_test, y_test, X_val, y_val, output_dir):
     rows = []
     for idx, params in enumerate(tqdm(param_combinations, desc=f"Grid Search {algo_name}", leave=False)):
         row = train_evaluate_and_save_single(
-            algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, X_val, y_val, cv, output_dir
+            algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, X_val, y_val, output_dir
         )
         rows.append(row)
     return pd.DataFrame(rows)
 
 
-def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, X_val, y_val, output_dir, cv):
+def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, X_val, y_val, output_dir):
     algo_cfg = ALGORITHMS[algo_name]
     param_combinations = generate_param_combinations(algo_cfg["get_param_grid"])
     df = run_param_grid(
@@ -231,7 +219,6 @@ def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, X_v
         y_test,
         X_val,
         y_val,
-        cv,
         output_dir,
     )
     return df, len(param_combinations)
@@ -254,17 +241,14 @@ def train_and_save_all_models_for_algorithm(
     y_test,
     y_val,
     output_dir,
-    cv_splits=5,
-    random_state=42,
 ):
     if algo_name not in ALGORITHMS:
         raise ValueError(f"Algorithm '{algo_name}' not defined")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    cv = generate_cv(cv_splits, random_state)
-
+    
     df, param_count = train_models_for_param_grid(
-        algo_name, X_train, y_train, X_test, y_test, X_val, y_val, output_dir, cv
+        algo_name, X_train, y_train, X_test, y_test, X_val, y_val, output_dir
     )
 
     ranked = process_results(df, output_dir, algo_name)
@@ -286,11 +270,11 @@ def main():
         algo_name=algo_name,
         X_train=X_train,
         X_test=X_test,
+        X_val=X_test, # Just dummy for main
         y_train=y_train,
         y_test=y_test,
+        y_val=y_test, # Just dummy for main
         output_dir=output_dir,
-        cv_splits=5,
-        random_state=42,
     )
 
     print("Training finished.")
