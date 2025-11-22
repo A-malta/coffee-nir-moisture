@@ -131,31 +131,42 @@ def evaluate_with_cross_validation(estimator, X, y, cv):
     }
 
 
-def compute_model_metrics(estimator, X_train, y_train, X_test, y_test):
+def compute_model_metrics(estimator, X_train, y_train, X_test, y_test, X_val, y_val):
     y_train_pred = estimator.predict(X_train)
     y_test_pred = estimator.predict(X_test)
+    y_val_pred = estimator.predict(X_val)
     
     train_rmse = float(mean_squared_error(y_train, y_train_pred, squared=False))
     test_rmse = float(mean_squared_error(y_test, y_test_pred, squared=False))
+    val_rmse = float(mean_squared_error(y_val, y_val_pred, squared=False))
     
     return {
         "train_rmse": train_rmse,
         "test_rmse": test_rmse,
+        "val_rmse": val_rmse,
         "train_mae": float(mean_absolute_error(y_train, y_train_pred)),
         "test_mae": float(mean_absolute_error(y_test, y_test_pred)),
+        "val_mae": float(mean_absolute_error(y_val, y_val_pred)),
         "train_bias": float(np.mean(y_train_pred - y_train)),
         "test_bias": float(np.mean(y_test_pred - y_test)),
+        "val_bias": float(np.mean(y_val_pred - y_val)),
         "train_rpd": float(np.std(y_train) / train_rmse) if train_rmse > 0 else 0.0,
         "test_rpd": float(np.std(y_test) / test_rmse) if test_rmse > 0 else 0.0,
+        "val_rpd": float(np.std(y_val) / val_rmse) if val_rmse > 0 else 0.0,
         "train_r2": float(r2_score(y_train, y_train_pred)),
         "test_r2": float(r2_score(y_test, y_test_pred)),
+        "val_r2": float(r2_score(y_val, y_val_pred)),
     }
 
 
-def train_and_evaluate(estimator, X_train, y_train, X_test, y_test, cv):
-    cv_scores = evaluate_with_cross_validation(estimator, X_train, y_train, cv)
+def train_and_evaluate(estimator, X_train, y_train, X_test, y_test, X_val, y_val, cv):
+    if cv is not None:
+        cv_scores = evaluate_with_cross_validation(estimator, X_train, y_train, cv)
+    else:
+        cv_scores = {}
+        
     estimator.fit(X_train, y_train)
-    metrics = compute_model_metrics(estimator, X_train, y_train, X_test, y_test)
+    metrics = compute_model_metrics(estimator, X_train, y_train, X_test, y_test, X_val, y_val)
     return {
         "estimator": estimator,
         **cv_scores,
@@ -187,9 +198,9 @@ def create_estimator_for_params(algo_cfg, params):
     return algo_cfg["make_estimator"](params)
 
 
-def train_evaluate_and_save_single(algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, cv, output_dir):
+def train_evaluate_and_save_single(algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, X_val, y_val, cv, output_dir):
     estimator = create_estimator_for_params(algo_cfg, params)
-    results = train_and_evaluate(estimator, X_train, y_train, X_test, y_test, cv)
+    results = train_and_evaluate(estimator, X_train, y_train, X_test, y_test, X_val, y_val, cv)
 
     model_path = output_dir / f"{algo_name}_model_{idx:03d}.joblib"
     dump(results["estimator"], model_path)
@@ -197,17 +208,17 @@ def train_evaluate_and_save_single(algo_name, params, algo_cfg, idx, X_train, y_
     return build_result_row(algo_name, idx, model_path, params, results)
 
 
-def run_param_grid(algo_name, algo_cfg, param_combinations, X_train, y_train, X_test, y_test, cv, output_dir):
+def run_param_grid(algo_name, algo_cfg, param_combinations, X_train, y_train, X_test, y_test, X_val, y_val, cv, output_dir):
     rows = []
     for idx, params in enumerate(tqdm(param_combinations, desc=f"Grid Search {algo_name}", leave=False)):
         row = train_evaluate_and_save_single(
-            algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, cv, output_dir
+            algo_name, params, algo_cfg, idx, X_train, y_train, X_test, y_test, X_val, y_val, cv, output_dir
         )
         rows.append(row)
     return pd.DataFrame(rows)
 
 
-def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, output_dir, cv):
+def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, X_val, y_val, output_dir, cv):
     algo_cfg = ALGORITHMS[algo_name]
     param_combinations = generate_param_combinations(algo_cfg["get_param_grid"])
     df = run_param_grid(
@@ -218,6 +229,8 @@ def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, out
         y_train,
         X_test,
         y_test,
+        X_val,
+        y_val,
         cv,
         output_dir,
     )
@@ -227,8 +240,7 @@ def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, out
 def process_results(df, output_dir, algo_name):
     if df.empty:
         return df
-    df = df.sort_values(by="test_rmse")
-    df["rank_by_test_rmse"] = range(1, len(df) + 1)
+    # No sorting or ranking as requested
     df.to_csv(output_dir / "all_models_metrics.csv", index=False)
     return df
 
@@ -237,8 +249,10 @@ def train_and_save_all_models_for_algorithm(
     algo_name,
     X_train,
     X_test,
+    X_val,
     y_train,
     y_test,
+    y_val,
     output_dir,
     cv_splits=5,
     random_state=42,
@@ -250,7 +264,7 @@ def train_and_save_all_models_for_algorithm(
     cv = generate_cv(cv_splits, random_state)
 
     df, param_count = train_models_for_param_grid(
-        algo_name, X_train, y_train, X_test, y_test, output_dir, cv
+        algo_name, X_train, y_train, X_test, y_test, X_val, y_val, output_dir, cv
     )
 
     ranked = process_results(df, output_dir, algo_name)
