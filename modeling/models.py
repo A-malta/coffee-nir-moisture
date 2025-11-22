@@ -227,7 +227,7 @@ def train_models_for_param_grid(algo_name, X_train, y_train, X_test, y_test, X_v
 def process_results(df, output_dir, algo_name):
     if df.empty:
         return df
-    # No sorting or ranking as requested
+    
     df.to_csv(output_dir / "all_models_metrics.csv", index=False)
     return df
 

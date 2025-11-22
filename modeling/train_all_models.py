@@ -24,7 +24,6 @@ def split_train_test_val_ks(X, y, val_ratio=0.1, test_ratio=0.1):
     X_np = X.to_numpy()
     n_total = len(X_np)
     
-    # 1. Select Validation Set (from Total)
     n_val = max(1, int(val_ratio * n_total))
     val_idx, remaining_idx = kennard_stone(X_np, n_val)
     
@@ -35,18 +34,13 @@ def split_train_test_val_ks(X, y, val_ratio=0.1, test_ratio=0.1):
     y_remaining = y.iloc[remaining_idx]
     X_remaining_np = X_remaining.to_numpy()
     
-    # 2. Select Test Set (from Remaining)
-    # We want test_ratio of the TOTAL.
     n_test = max(1, int(test_ratio * n_total))
     
-    # Ensure we don't ask for more than we have
     if n_test >= len(X_remaining):
         raise ValueError("Not enough samples for Test set after Validation split")
         
     test_idx_rel, train_idx_rel = kennard_stone(X_remaining_np, n_test)
     
-    # Map relative indices back to original dataframe is tricky if we use iloc on X_remaining directly
-    # simpler to just use the subsets returned by iloc
     X_test = X_remaining.iloc[test_idx_rel]
     y_test = y_remaining.iloc[test_idx_rel]
     
