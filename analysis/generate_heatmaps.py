@@ -37,6 +37,17 @@ def load_all_metrics():
         
     return pd.concat(data, ignore_index=True)
 
+def filter_best_models(df):
+    """
+    Selects the best model (lowest test_rmse) for each algorithm and preprocessing combination.
+    """
+    if df.empty:
+        return df
+        
+    # Group by algorithm and preprocessing, then find the index of the row with min test_rmse
+    idx = df.groupby(["algorithm", "preprocessing"])["test_rmse"].idxmin()
+    return df.loc[idx].reset_index(drop=True)
+
 def get_metrics(df):
     exclude_cols = {
         "algo", "model_id", "model_path", "preprocessing", 
@@ -50,19 +61,12 @@ def get_metrics(df):
     ]
     return metrics
 
-def generate_heatmap(df, algo, metric):
-    algo_df = df[df["algorithm"] == algo].copy()
-    
-    if algo_df.empty:
-        return
-
-    y_col = "model_id"
-    y_label = "Model ID"
-    algo_df[y_col] = pd.to_numeric(algo_df[y_col], errors='coerce')
-    algo_df = algo_df.sort_values(y_col, ascending=True)
-    
-    pivot_df = algo_df.pivot_table(
-        index=y_col, 
+def generate_heatmap(df, metric):
+    """
+    Generates a heatmap for a specific metric, comparing Algorithms vs Preprocessing.
+    """
+    pivot_df = df.pivot_table(
+        index="algorithm", 
         columns="preprocessing", 
         values=metric, 
         aggfunc="first"
@@ -71,21 +75,24 @@ def generate_heatmap(df, algo, metric):
     if pivot_df.empty:
         return
 
-    pivot_df = pivot_df.sort_index(ascending=True)
+    # Sort index to keep consistent order if desired, or rely on ALGORITHMS order
+    # Reindex to ensure specific order of algorithms if they exist in the data
+    existing_algos = [algo for algo in ALGORITHMS if algo in pivot_df.index]
+    pivot_df = pivot_df.reindex(existing_algos)
 
-    n_rows = len(pivot_df)
-    height = max(8, n_rows * 0.3)
-
-    plt.figure(figsize=(12, height))
-    sns.heatmap(pivot_df, annot=True, fmt=".4f", cmap="viridis_r", cbar_kws={'label': metric})
-    plt.title(f"Heatmap: {metric} - {algo.upper()}")
-    plt.ylabel(y_label)
+    plt.figure(figsize=(14, 6))
+    
+    # Determine formatting based on metric name
+    fmt = ".4f"
+    
+    sns.heatmap(pivot_df, annot=True, fmt=fmt, cmap="viridis_r", cbar_kws={'label': metric})
+    plt.title(f"Best Model Performance: {metric}")
+    plt.ylabel("Algorithm")
     plt.xlabel("Preprocessing")
     plt.tight_layout()
     
-    save_dir = OUTPUT_DIR / algo
-    save_dir.mkdir(parents=True, exist_ok=True)
-    plt.savefig(save_dir / f"{metric}.png", dpi=150)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    plt.savefig(OUTPUT_DIR / f"{metric}.png", dpi=150)
     plt.close()
 
 def main():
@@ -96,14 +103,17 @@ def main():
         print("No metrics found.")
         return
 
-    print(f"Found {len(df)} records.")
+    print(f"Found {len(df)} total models.")
     
-    metrics = get_metrics(df)
+    print("Filtering for best models...")
+    best_models_df = filter_best_models(df)
+    print(f"Retained {len(best_models_df)} best models.")
+    
+    metrics = get_metrics(best_models_df)
     print(f"Identified metrics: {metrics}")
 
-    for algo in tqdm(ALGORITHMS, desc="Algorithms"):
-        for metric in tqdm(metrics, desc=f"Metrics for {algo}", leave=False):
-            generate_heatmap(df, algo, metric)
+    for metric in tqdm(metrics, desc="Generating Heatmaps"):
+        generate_heatmap(best_models_df, metric)
             
     print(f"Heatmaps saved to {OUTPUT_DIR}")
 
