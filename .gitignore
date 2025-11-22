@@ -4,6 +4,7 @@ venv/
 
 # Saídas e resultados
 __pycache__/
+output/
 
 # Arquivos temporários e de cache
 *.log
