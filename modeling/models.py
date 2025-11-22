@@ -19,7 +19,9 @@ def load_dataset(path, target_column):
     df = pd.read_csv(path)
     if target_column not in df.columns:
         raise ValueError(f"Target column '{target_column}' not found in {path}")
-    X = df.select_dtypes(include=[np.number]).drop(columns=[target_column], errors='ignore')
+    
+    cols_to_drop = [target_column, "Moisture W.B", "replicate"]
+    X = df.select_dtypes(include=[np.number]).drop(columns=cols_to_drop, errors='ignore')
     y = df[target_column]
     return X, y
 
